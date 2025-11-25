@@ -26,7 +26,7 @@ def processar_arquivos(caminho_servidor, caminho_conta, caminho_saida, data_paga
         status_callback(f"Lendo '{caminho_conta}'...")
         colunas_como_texto_contas = {'cpf': str, 'banco': str, 'agencia': str, 'conta': str}
         df_contas = pd.read_excel(caminho_conta, dtype=colunas_como_texto_contas)
-
+        df_contas_ordenado = df_contas.sort_values(by='cpf', ascending=False)
         # --- 4. Carregar o arquivo de SERVIDORES (GP) ---
         status_callback(f"Lendo '{caminho_servidor}'...")
         df_dados = pd.read_excel(caminho_servidor, dtype={'cpf': str})
@@ -38,20 +38,20 @@ def processar_arquivos(caminho_servidor, caminho_conta, caminho_saida, data_paga
             df_dados_limpo = df_dados_ordenado.drop_duplicates(subset='cpf', keep='first')
         else:
             status_callback("Ordenando Matriculas...")
-            df_dados_limpo = df_dados.sort_values(by='matricula', ascending=False)
+            df_dados_limpo = df_dados.sort_values(by='cpf', ascending=False)
 
         # --- 6. Cruzar (Merge) os dados CORRIGIDO ---
         status_callback("Cruzando dados (Mantendo todos os funcionários)...")
         
         # CORREÇÃO AQUI: Invertemos a ordem. df_dados_limpo fica na esquerda.
         # Isso garante que TODOS os funcionários fiquem no resultado.
-        df_final = pd.merge(df_dados_limpo, df_contas, on='cpf', how='left')
+        df_final = pd.merge(df_dados_limpo, df_contas_ordenado, on='cpf', how='left')
 
         # --- 7. Tratar quem ficou sem conta (Preencher com '0') ---
         # Quem não tinha conta ficou com NaN (vazio). Vamos colocar '0'.
         cols_bancarias = ['banco', 'agencia', 'conta']
-        for col in cols_bancarias:
-            df_final[col] = df_final[col].fillna('0')
+        # for col in cols_bancarias:
+            # df_final[col] = df_final[col].fillna('0')
 
         # --- 8. Ordenar o resultado final por nome ---
         status_callback("Ordenando resultado por nome...")
@@ -80,16 +80,19 @@ def processar_arquivos(caminho_servidor, caminho_conta, caminho_saida, data_paga
                 # Dados Bancários
                 # Se não tinha conta, o fillna colocou '0'
                 conta_orig = str(linha['conta']).strip()
+                print(f"Processando CPF {cpf}: Conta original = '{conta_orig}' Banco = '{linha['banco']}' Agencia = '{linha['agencia']}'")
                 banco_orig = str(linha['banco']).strip()
                 agencia_orig = str(linha['agencia']).strip()
                 
                 # Lógica para Zerar Dados Bancários
                 # Se a conta for '0' (não encontrada) OU cair nas regras de exclusão (38/39)
                 if conta_orig == '0' or conta_orig.startswith('39') or conta_orig.startswith('38'):
+                    print(f"Zerando dados bancários para CPF {cpf} (Conta: {conta_orig}) Banco: {banco_orig} Agência: {agencia_orig}")
                     banco = '041'         # Mantém o banco Banrisul
                     agencia = '0000'      # Zera agência
                     conta = '0000000000'  # Zera conta
                 else:
+                    print(f"Mantendo dados bancários para CPF {cpf} (Conta: {conta_orig}) Banco: {banco_orig} Agência: {agencia_orig}")
                     banco = banco_orig
                     agencia = agencia_orig
                     conta = conta_orig
