@@ -1,7 +1,7 @@
-./OLD_FILES
-./OLD_VERS
+./OLD_FILES/
+./OLD_VERS/
 ./.vscode/
 *.txt
 *.xlsx
-./build
-./dist
+./build/
+./dist/
