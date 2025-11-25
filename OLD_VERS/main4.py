@@ -1,5 +1,6 @@
 import pandas as pd
 import tkinter as tk
+import datetime
 from tkinter import filedialog, messagebox
 
 # ==============================================================================
@@ -14,10 +15,9 @@ def processar_arquivos(caminho_servidor, caminho_conta, caminho_saida, status_ca
     """
     try:
         # --- 2. Constantes de Layout ---
-        DATA_PAGAMENTO = '20220220'
+        DATA_PAGAMENTO = datetime.date.today().strftime("%Y%m%d")
         TIPO_EMPREGO = 'J'
-        VALOR_13_SALARIO = '0' * 15
-        COD_OCORRENCIA = '0' * 2
+        COD_OCORRENCIA = ' ' * 2
         DESC_OCORRENCIA = ' ' * 82
         DATA_AGENDAMENTO = ' ' * 8
         CNPJ_PAGADOR = '88131164000107'
@@ -52,6 +52,8 @@ def processar_arquivos(caminho_servidor, caminho_conta, caminho_saida, status_ca
         # --- 8. Formatar e Salvar no Arquivo TXT ---
         status_callback("Gerando arquivo de saída formatado...")
         total_linhas = len(df_final_ordenado)
+
+
         
         with open(caminho_saida, 'w', encoding='utf-8') as f:
             
@@ -91,11 +93,11 @@ def processar_arquivos(caminho_servidor, caminho_conta, caminho_saida, status_ca
                 agencia_fmt = agencia.rjust(4, '0')
                 conta_fmt = conta.rjust(10, '0')
                 matricula_fmt = str(matricula).rjust(15, '0')
-                valor_salario_fmt = str(int(salario_val * 100)).rjust(15, '0')
+                valor_salario_fmt = str(int(salario_val)).rjust(15, '0')
 
                 linha_formatada = (
                     f"{nome_fmt}{cpf_fmt}{banco_fmt}{agencia_fmt}{conta_fmt}"
-                    f"{matricula_fmt}{valor_salario_fmt}{VALOR_13_SALARIO}"
+                    f"{matricula_fmt}{valor_salario_fmt}{valor_salario_fmt}"
                     f"{COD_OCORRENCIA}{DESC_OCORRENCIA}{DATA_AGENDAMENTO}"
                     f"{DATA_PAGAMENTO}{TIPO_EMPREGO}{CNPJ_PAGADOR}"
                 )
@@ -224,7 +226,7 @@ class App:
         # 1. Obter os caminhos dos campos de entrada
         caminho_servidor = self.entry_servidor.get()
         caminho_conta = self.entry_contas.get()
-        caminho_saida = self.entry_saida.get()
+        caminho_saida = self.entry_saida.get() + ".txt"
 
         # 2. Validar se os campos não estão vazios
         if not caminho_servidor or not caminho_conta or not caminho_saida:
