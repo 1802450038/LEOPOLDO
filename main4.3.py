@@ -26,10 +26,27 @@ def processar_arquivos(caminho_servidor, caminho_conta, caminho_saida, data_paga
         status_callback(f"Lendo '{caminho_conta}'...")
         colunas_como_texto_contas = {'cpf': str, 'banco': str, 'agencia': str, 'conta': str}
         df_contas = pd.read_excel(caminho_conta, dtype=colunas_como_texto_contas)
-        df_contas_ordenado = df_contas.sort_values(by='cpf', ascending=False)
+        # Normalizar o CPF para ter 11 dígitos com zeros à esquerda
+        df_contas['cpf'] = df_contas['cpf'].apply(lambda x: str(int(x)).zfill(11) if pd.notnull(x) else x)
+        # df_contas_ordenado = df_contas.sort_values(by='cpf', ascending=False)
+
+        #JUST FOR DEBUGGING PURPOSES
+        # for indice, linha in df_contas.iterrows():
+        # #     cpf_formatado = str(linha['cpf']).zfill(11) 
+        #     # print(f"Conta carregada: CPF {cpf_formatado} Banco {linha['banco']} Agência {linha['agencia']} Conta {linha['conta']}")
+        #     print(f"Conta carregada: CPF {linha['cpf']} Banco {linha['banco']} Agência {linha['agencia']} Conta {linha['conta']}")
+
+
         # --- 4. Carregar o arquivo de SERVIDORES (GP) ---
         status_callback(f"Lendo '{caminho_servidor}'...")
         df_dados = pd.read_excel(caminho_servidor, dtype={'cpf': str})
+
+
+        #JUST FOR DEBUGGING PURPOSES
+        # for indice, linha in df_dados.iterrows():
+            # cpf_formatado = str(linha['cpf']).zfill(11) 
+            # print(f"Conta carregada: CPF {linha['cpf']} Nome {linha['nome']} Matrícula {linha['matricula']} Salário {linha['salario']}")
+
 
         if(REMOVE_DUPLICADOS):
             # --- 5. Filtrar o 'df_dados' para manter a maior matrícula ---
@@ -45,13 +62,13 @@ def processar_arquivos(caminho_servidor, caminho_conta, caminho_saida, data_paga
         
         # CORREÇÃO AQUI: Invertemos a ordem. df_dados_limpo fica na esquerda.
         # Isso garante que TODOS os funcionários fiquem no resultado.
-        df_final = pd.merge(df_dados_limpo, df_contas_ordenado, on='cpf', how='left')
+        df_final = pd.merge(df_dados_limpo, df_contas, on='cpf', how='left')
 
         # --- 7. Tratar quem ficou sem conta (Preencher com '0') ---
         # Quem não tinha conta ficou com NaN (vazio). Vamos colocar '0'.
         cols_bancarias = ['banco', 'agencia', 'conta']
-        # for col in cols_bancarias:
-            # df_final[col] = df_final[col].fillna('0')
+        for col in cols_bancarias:
+            df_final[col] = df_final[col].fillna('0')
 
         # --- 8. Ordenar o resultado final por nome ---
         status_callback("Ordenando resultado por nome...")
@@ -80,19 +97,19 @@ def processar_arquivos(caminho_servidor, caminho_conta, caminho_saida, data_paga
                 # Dados Bancários
                 # Se não tinha conta, o fillna colocou '0'
                 conta_orig = str(linha['conta']).strip()
-                print(f"Processando CPF {cpf}: Conta original = '{conta_orig}' Banco = '{linha['banco']}' Agencia = '{linha['agencia']}'")
+                # print(f"Processando CPF {cpf}: Conta original = '{conta_orig}' Banco = '{linha['banco']}' Agencia = '{linha['agencia']}'")
                 banco_orig = str(linha['banco']).strip()
                 agencia_orig = str(linha['agencia']).strip()
                 
                 # Lógica para Zerar Dados Bancários
                 # Se a conta for '0' (não encontrada) OU cair nas regras de exclusão (38/39)
                 if conta_orig == '0' or conta_orig.startswith('39') or conta_orig.startswith('38'):
-                    print(f"Zerando dados bancários para CPF {cpf} (Conta: {conta_orig}) Banco: {banco_orig} Agência: {agencia_orig}")
+                    # print(f"Zerando dados bancários para CPF {cpf} (Conta: {conta_orig}) Banco: {banco_orig} Agência: {agencia_orig}")
                     banco = '041'         # Mantém o banco Banrisul
                     agencia = '0000'      # Zera agência
                     conta = '0000000000'  # Zera conta
                 else:
-                    print(f"Mantendo dados bancários para CPF {cpf} (Conta: {conta_orig}) Banco: {banco_orig} Agência: {agencia_orig}")
+                    # print(f"Mantendo dados bancários para CPF {cpf} (Conta: {conta_orig}) Banco: {banco_orig} Agência: {agencia_orig}")
                     banco = banco_orig
                     agencia = agencia_orig
                     conta = conta_orig
@@ -154,7 +171,9 @@ class App:
         
         btn_servidor = tk.Button(frame_servidor, text="Procurar...", command=self.procurar_servidor)
         btn_servidor.pack(side=tk.LEFT, padx=(5, 0))
-        self.entry_servidor.insert(0,"/Users/gabrielbellagamba/Desktop/LEOPOLDO/dados.xlsx")
+        
+        # self.entry_servidor.insert(0,f"C:\\Users\\Gabriel\\Desktop\\LEOPOLDO\\LEOPOLDO\\dados.xlsx")
+        
 
         # --- 2. Arquivo de Contas (retorno_contas) ---
         frame_contas = tk.Frame(frame_main)
@@ -168,7 +187,8 @@ class App:
         
         btn_contas = tk.Button(frame_contas, text="Procurar...", command=self.procurar_contas)
         btn_contas.pack(side=tk.LEFT, padx=(5, 0))
-        self.entry_contas.insert(0,"/Users/gabrielbellagamba/Desktop/LEOPOLDO/contas.xlsx")
+
+        # self.entry_contas.insert(0,f"C:\\Users\\Gabriel\\Desktop\\LEOPOLDO\\LEOPOLDO\\contas.xlsx")
 
         # --- 3. Arquivo de Saída (TXT) ---
         frame_saida = tk.Frame(frame_main)
@@ -277,3 +297,7 @@ if __name__ == "__main__":
     root = tk.Tk()
     app = App(root)
     root.mainloop()
+
+
+    # Compile code 
+    # pyinstaller --noconsole --onefile --hidden-import=openpyxl main4.3.py
