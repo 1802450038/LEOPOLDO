@@ -1,6 +1,7 @@
 import pandas as pd
 import tkinter as tk
 import datetime
+from decimal import Decimal
 from tkinter import filedialog, messagebox
 
 # ==============================================================================
@@ -67,7 +68,13 @@ def processar_arquivos(caminho_servidor, caminho_conta, caminho_saida, data_paga
                 # Dados do Funcionário (Sempre existem agora)
                 nome = str(linha['nome'])
                 cpf = str(linha['cpf'])
-                matricula = str(linha['matricula'])
+                if pd.isna(linha['matricula']):
+                    matricula = '0'
+                elif type(linha['matricula']) == float:
+                    matricula = str(int(linha['matricula']))
+                else:
+                    matricula = str(linha['matricula'])
+                # Salário
                 salario_val = 0.0 if pd.isna(linha['salario']) else float(linha['salario'])
                 
                 # Dados Bancários
@@ -144,6 +151,7 @@ class App:
         
         btn_servidor = tk.Button(frame_servidor, text="Procurar...", command=self.procurar_servidor)
         btn_servidor.pack(side=tk.LEFT, padx=(5, 0))
+        self.entry_servidor.insert(0,"/Users/gabrielbellagamba/Desktop/LEOPOLDO/dados.xlsx")
 
         # --- 2. Arquivo de Contas (retorno_contas) ---
         frame_contas = tk.Frame(frame_main)
@@ -157,6 +165,7 @@ class App:
         
         btn_contas = tk.Button(frame_contas, text="Procurar...", command=self.procurar_contas)
         btn_contas.pack(side=tk.LEFT, padx=(5, 0))
+        self.entry_contas.insert(0,"/Users/gabrielbellagamba/Desktop/LEOPOLDO/contas.xlsx")
 
         # --- 3. Arquivo de Saída (TXT) ---
         frame_saida = tk.Frame(frame_main)
